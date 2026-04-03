@@ -1,0 +1,32 @@
+{
+    "audit_timestamp": "2026-04-03 18:56:09 UTC",
+    "mfa_violations": [
+        {
+            "UserName": "bob",
+            "Issue": "MFA not enabled"
+        },
+        {
+            "UserName": "carol",
+            "Issue": "MFA not enabled"
+        }
+    ],
+    "old_access_keys": [
+        {
+            "UserName": "bob",
+            "AccessKeyId": "AKIA000000000000BBB1",
+            "Issue": "Access key older than 90 days"
+        }
+    ],
+    "unused_users": [
+        {
+            "UserName": "carol",
+            "Issue": "User has never logged in"
+        }
+    ],
+    "wildcard_roles": [
+        {
+            "RoleName": "AdminRole",
+            "Issue": "Role has wildcard * permissions"
+        }
+    ]
+}
