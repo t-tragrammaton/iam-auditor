@@ -1,5 +1,6 @@
 # main.py
 # Entry point. Runs all checks and saves the report.
+# Error handling added so one bad API response doesn't crash the audit.
 
 import json
 import os
@@ -29,18 +30,36 @@ def print_findings(category, results):
         print(f"  [{severity}] {item}")
 
 def run_audit():
-    print("Fetching IAM data...")
-    users = get_users()
-    roles = get_roles()
-    print(f"Found {len(users)} users and {len(roles)} roles.\n")
+    try:
+        print("Fetching IAM data...")
+        users = get_users()
+        roles = get_roles()
+        print(f"Found {len(users)} users and {len(roles)} roles.\n")
+    except Exception as e:
+        print(f"[FATAL] Failed to fetch IAM data: {e}")
+        print("Check your AWS credentials and permissions.")
+        return
 
     findings = {
         "audit_timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
-        "mfa_violations": check_mfa(users),
-        "old_access_keys": check_old_access_keys(users),
-        "unused_users": check_unused_users(users),
-        "wildcard_roles": check_wildcard_roles(roles)
+        "mfa_violations": [],
+        "old_access_keys": [],
+        "unused_users": [],
+        "wildcard_roles": []
     }
+
+    checks = [
+        ("mfa_violations", check_mfa, users),
+        ("old_access_keys", check_old_access_keys, users),
+        ("unused_users", check_unused_users, users),
+        ("wildcard_roles", check_wildcard_roles, roles),
+    ]
+
+    for key, check_fn, data in checks:
+        try:
+            findings[key] = check_fn(data)
+        except Exception as e:
+            print(f"  [ERROR] {key} check failed: {e}")
 
     print("=== IAM AUDIT RESULTS ===\n")
     for category, results in findings.items():
@@ -51,10 +70,19 @@ def run_audit():
             print_findings(category, results)
             print()
 
-    output_path = os.path.join("output", "audit_report.json")
-    with open(output_path, "w") as f:
-        json.dump(findings, f, indent=4, default=str)
+    try:
+        output_path = os.path.join("output", "audit_report.json")
+        with open(output_path, "w") as f:
+            json.dump(findings, f, indent=4, default=str)
+        print(f"Report saved to {output_path}")
+    except Exception as e:
+        print(f"[ERROR] Failed to save report: {e}")
 
-    print(f"Report saved to {output_path}")
+    try:
+        from auditor.report import generate_html_report
+        html_path = os.path.join("output", "audit_report.html")
+        generate_html_report(findings, html_path)
+    except Exception as e:
+        print(f"[ERROR] Failed to generate HTML report: {e}")
 
 run_audit()
