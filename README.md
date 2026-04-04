@@ -16,5 +16,5 @@ Generates a JSON report saved to the output/ folder.
 - auditor/checks.py — security check functions
 - main.py — entry point, runs all checks and saves report
 
-## Phase 2 (in progress)
+## Phase 2 (complete)
 Replacing mock data with live boto3 calls against a real AWS account.
