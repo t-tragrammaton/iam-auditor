@@ -1,5 +1,4 @@
 {
-    "audit_timestamp": "2026-04-04 17:37:06 UTC",
     "mfa_violations": [
         {
             "UserName": "bob",
@@ -33,5 +32,6 @@
             "Issue": "Role has wildcard * permissions",
             "Severity": "CRITICAL"
         }
-    ]
+    ],
+    "audit_timestamp": "2026-04-04 18:05:21 UTC"
 }
