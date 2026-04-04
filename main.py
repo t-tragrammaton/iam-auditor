@@ -1,18 +1,39 @@
 # main.py
-# This is the entry point. It runs everything and saves the report.
+# Entry point. Runs all checks and saves the report.
 
 import json
 import os
 from datetime import datetime, timezone
-from auditor.mock_data import get_mock_users, get_mock_roles
+
+# Toggle this to switch between mock data and real AWS data
+USE_MOCK_DATA = True
+
+if USE_MOCK_DATA:
+    from auditor.mock_data import get_mock_users as get_users
+    from auditor.mock_data import get_mock_roles as get_roles
+else:
+    from auditor.aws_data import get_aws_users as get_users
+    from auditor.aws_data import get_aws_roles as get_roles
+
 from auditor.checks import check_mfa, check_old_access_keys, check_unused_users, check_wildcard_roles
 
-def run_audit():
-    # Step 1 — Get the data
-    users = get_mock_users()
-    roles = get_mock_roles()
+SEVERITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2}
 
-    # Step 2 — Run every check
+def print_findings(category, results):
+    if not results:
+        print("  No issues found")
+        return
+    sorted_results = sorted(results, key=lambda x: SEVERITY_ORDER.get(x.get("Severity", "MEDIUM"), 2))
+    for item in sorted_results:
+        severity = item.get("Severity", "UNKNOWN")
+        print(f"  [{severity}] {item}")
+
+def run_audit():
+    print("Fetching IAM data...")
+    users = get_users()
+    roles = get_roles()
+    print(f"Found {len(users)} users and {len(roles)} roles.\n")
+
     findings = {
         "audit_timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "mfa_violations": check_mfa(users),
@@ -21,21 +42,15 @@ def run_audit():
         "wildcard_roles": check_wildcard_roles(roles)
     }
 
-    # Step 3 — Print results to terminal
-    print("\n=== IAM AUDIT RESULTS ===\n")
+    print("=== IAM AUDIT RESULTS ===\n")
     for category, results in findings.items():
         if category == "audit_timestamp":
             print(f"Audit run at: {results}\n")
         else:
             print(f"[{category.upper()}]")
-            if results:
-                for item in results:
-                    print(f"  - {item}")
-            else:
-                print("  No issues found")
+            print_findings(category, results)
             print()
 
-    # Step 4 — Save report to output folder
     output_path = os.path.join("output", "audit_report.json")
     with open(output_path, "w") as f:
         json.dump(findings, f, indent=4, default=str)

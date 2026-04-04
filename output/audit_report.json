@@ -1,32 +1,37 @@
 {
-    "audit_timestamp": "2026-04-04 00:20:20 UTC",
+    "audit_timestamp": "2026-04-04 00:52:41 UTC",
     "mfa_violations": [
         {
             "UserName": "bob",
-            "Issue": "MFA not enabled"
+            "Issue": "MFA not enabled",
+            "Severity": "CRITICAL"
         },
         {
             "UserName": "carol",
-            "Issue": "MFA not enabled"
+            "Issue": "MFA not enabled",
+            "Severity": "CRITICAL"
         }
     ],
     "old_access_keys": [
         {
             "UserName": "bob",
             "AccessKeyId": "AKIA000000000000BBB1",
-            "Issue": "Access key older than 90 days"
+            "Issue": "Access key older than 90 days",
+            "Severity": "HIGH"
         }
     ],
     "unused_users": [
         {
             "UserName": "carol",
-            "Issue": "User has never logged in"
+            "Issue": "User has never logged in",
+            "Severity": "MEDIUM"
         }
     ],
     "wildcard_roles": [
         {
             "RoleName": "AdminRole",
-            "Issue": "Role has wildcard * permissions"
+            "Issue": "Role has wildcard * permissions",
+            "Severity": "CRITICAL"
         }
     ]
 }
