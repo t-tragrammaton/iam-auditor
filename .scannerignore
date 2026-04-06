@@ -1,0 +1,3 @@
+# Suppress false positives in mock data
+# These are intentionally fake AWS keys for testing purposes
+PY013

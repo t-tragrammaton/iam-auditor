@@ -68,7 +68,7 @@ jobs:
         run: |
           python /tmp/scanner/main.py \
             --directory . \
-            --severity CRITICAL \
+            --severity HIGH \
             --fail-on CRITICAL \
             --output /tmp/scan-results-gate \
             --scanners terraform python dockerfile github_actions
