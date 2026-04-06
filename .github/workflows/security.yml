@@ -1,0 +1,125 @@
+# security.yml
+# CI/CD security pipeline for iam-auditor.
+# Runs on every push and pull request.
+# Blocks merges if critical security findings are detected.
+
+name: Security Pipeline
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Clone CI/CD scanner
+        run: |
+          git clone https://github.com/t-tragrammaton/cicd-security-scanner.git /tmp/scanner
+
+      - name: Run security scan
+        run: |
+          python /tmp/scanner/main.py \
+            --directory . \
+            --severity HIGH \
+            --fail-on CRITICAL \
+            --output /tmp/scan-results \
+            --scanners terraform python dockerfile github_actions
+        continue-on-error: true
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: /tmp/scan-results/scanner_report.sarif
+          category: cicd-security-scanner
+
+      - name: Upload scan results as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results
+          path: /tmp/scan-results/
+          retention-days: 30
+
+      - name: Check for critical findings
+        run: |
+          python /tmp/scanner/main.py \
+            --directory . \
+            --severity CRITICAL \
+            --fail-on CRITICAL \
+            --output /tmp/scan-results-gate \
+            --scanners terraform python dockerfile github_actions
+
+  lint:
+    name: Python Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        run: |
+          flake8 . \
+            --count \
+            --max-line-length=120 \
+            --exclude=venv,.git,__pycache__ \
+            --statistics
+        continue-on-error: true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run auditor with mock data
+        run: python main.py
+
+      - name: Verify output files exist
+        run: |
+          test -f output/audit_report.json && echo "JSON report exists"
+          test -f output/audit_report.html && echo "HTML report exists"
