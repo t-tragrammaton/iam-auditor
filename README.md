@@ -19,7 +19,7 @@ Prints findings to terminal sorted by severity and saves a full JSON report to `
 
 **1. Clone the repo**
 
-`git clone https://github.com/aljinns/iam-auditor.git`
+`git clone https://github.com/t-tragrammaton/iam-auditor.git`
 
 `cd iam-auditor`
 
